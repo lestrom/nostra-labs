@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract CatalystCommons is ReentrancyGuard {
+contract StakingContract is ReentrancyGuard {
     IERC20 public gameToken;
     address public hostAgent;
     address public treasuryManager;

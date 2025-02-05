@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf ignition/deployments",
+    "depl": "sh deploy.sh"
   },
   "keywords": [],
   "author": "",
@@ -12,11 +14,13 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.12",
     "hardhat": "^2.22.18",
     "install": "^0.13.0"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.9",
-    "@openzeppelin/contracts": "^5.2.0"
+    "@openzeppelin/contracts": "^5.2.0",
+    "dotenv": "^16.4.7"
   }
 }
