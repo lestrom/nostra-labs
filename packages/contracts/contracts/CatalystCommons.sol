@@ -12,9 +12,8 @@ contract CatalystCommons is ReentrancyGuard {
     uint256 public entryFee;
     uint256 public treasuryFeePercentage;
     uint256 public prizePoolPercentage;
-    uint256 public burnPercentage; // NEW: Burn percentage for losing rounds
+    uint256 public burnPercentage;
 
-    // NEW: Event to log token burns
     event TokensBurned(address indexed user, uint256 amount);
 
     struct Round {
@@ -66,7 +65,7 @@ contract CatalystCommons is ReentrancyGuard {
         uint256 _entryFee,
         uint256 _treasuryFeePercentage,
         uint256 _prizePoolPercentage,
-        uint256 _burnPercentage // NEW parameter
+        uint256 _burnPercentage
     ) {
         require(_treasuryFeePercentage + _prizePoolPercentage == 100, "Fee percentages must total 100");
         gameToken = IERC20(_gameToken);
@@ -75,18 +74,21 @@ contract CatalystCommons is ReentrancyGuard {
         entryFee = _entryFee;
         treasuryFeePercentage = _treasuryFeePercentage;
         prizePoolPercentage = _prizePoolPercentage;
-        burnPercentage = _burnPercentage; // Set burn percentage (e.g., 50 for 50%)
+        burnPercentage = _burnPercentage;
     }
 
     function updateFeeConfig(
         uint256 _entryFee,
         uint256 _treasuryFeePercentage,
-        uint256 _prizePoolPercentage
+        uint256 _prizePoolPercentage,
+        uint256 _burnPercentage
     ) external onlyTreasuryManager {
         require(_treasuryFeePercentage + _prizePoolPercentage == 100, "Fee percentages must total 100");
+        require(_burnPercentage <= 100, "Burn percentage must not exceed 100");
         entryFee = _entryFee;
         treasuryFeePercentage = _treasuryFeePercentage;
         prizePoolPercentage = _prizePoolPercentage;
+        burnPercentage = _burnPercentage;
         emit FeeConfigUpdated(_entryFee, _treasuryFeePercentage, _prizePoolPercentage);
     }
 
@@ -192,19 +194,15 @@ contract CatalystCommons is ReentrancyGuard {
 
             emit RoundResolved(roundId, "THRESHOLD_MET", roundPlayers, distributions);
         } else {
-            // Failure branch: For losing rounds, 50% of each player's stake is burned and 50% goes to the treasury.
             for (uint256 i = 0; i < roundPlayers.length; i++) {
                 address player = roundPlayers[i];
                 uint256 playerStake = round.playerStakes[player];
                 distributions[i] = 0;
                 players[player].unavailableStakes -= playerStake;
 
-                // Calculate burn amount and treasury allocation.
-                // For a 50% burn, burnPercentage should be set to 50.
                 uint256 amountToBurn = (playerStake * burnPercentage) / 100;
-                uint256 amountToTreasury = playerStake - amountToBurn;  // 50% if burnPercentage is 50
+                uint256 amountToTreasury = playerStake - amountToBurn;
 
-                // Burn tokens: If gameToken supports burn(), use that; otherwise, transfer to address(0)
                 require(gameToken.transfer(address(0), amountToBurn), "Burn transfer failed");
                 emit TokensBurned(player, amountToBurn);
 
