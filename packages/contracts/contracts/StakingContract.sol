@@ -10,8 +10,6 @@ contract StakingContract is ReentrancyGuard {
     address public treasuryManager;
 
     uint256 public entryFee;
-    uint256 public treasuryFeePercentage;
-    uint256 public prizePoolPercentage;
     uint256 public burnPercentage;
 
     event TokensBurned(address indexed user, uint256 amount);
@@ -38,7 +36,6 @@ contract StakingContract is ReentrancyGuard {
     mapping(address => Player) public players;
     uint256 public currentRoundId;
     uint256 public treasuryBalance;
-    uint256 public prizePoolBalance;
 
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
@@ -48,7 +45,7 @@ contract StakingContract is ReentrancyGuard {
     event RoundResolved(uint256 indexed roundId, string resolution, address[] players, uint256[] distributions);
     event TreasuryBalanceChange(uint256 newBalance);
     event Investment(uint256 amount, address indexed to);
-    event FeeConfigUpdated(uint256 newEntryFee, uint256 newTreasuryFeePercentage, uint256 newPrizePoolPercentage);
+    event BurnPercentageUpdated(uint256 newBurnPercentage);
 
     modifier onlyHostAgent() {
         require(msg.sender == hostAgent, "Only host agent allowed");
@@ -70,33 +67,19 @@ contract StakingContract is ReentrancyGuard {
         address _hostAgent,
         address _treasuryManager,
         uint256 _entryFee,
-        uint256 _treasuryFeePercentage,
-        uint256 _prizePoolPercentage,
         uint256 _burnPercentage
     ) {
-        require(_treasuryFeePercentage + _prizePoolPercentage == 100, "Fee percentages must total 100");
         gameToken = IERC20(_gameToken);
         hostAgent = _hostAgent;
         treasuryManager = _treasuryManager;
         entryFee = _entryFee;
-        treasuryFeePercentage = _treasuryFeePercentage;
-        prizePoolPercentage = _prizePoolPercentage;
         burnPercentage = _burnPercentage;
     }
 
-    function updateFeeConfig(
-        uint256 _entryFee,
-        uint256 _treasuryFeePercentage,
-        uint256 _prizePoolPercentage,
-        uint256 _burnPercentage
-    ) external onlyTreasuryManager {
-        require(_treasuryFeePercentage + _prizePoolPercentage == 100, "Fee percentages must total 100");
+    function updateBurnPercentage(uint256 _burnPercentage) external onlyTreasuryManager {
         require(_burnPercentage <= 100, "Burn percentage must not exceed 100");
-        entryFee = _entryFee;
-        treasuryFeePercentage = _treasuryFeePercentage;
-        prizePoolPercentage = _prizePoolPercentage;
         burnPercentage = _burnPercentage;
-        emit FeeConfigUpdated(_entryFee, _treasuryFeePercentage, _prizePoolPercentage);
+        emit BurnPercentageUpdated(_burnPercentage);
     }
 
     function stake(uint256 amount) external nonReentrant {
@@ -163,7 +146,6 @@ contract StakingContract is ReentrancyGuard {
         require(!round.isResolved, "Round already resolved");
         require(block.number < round.expiryBlockNumber, "Round expired");
 
-
         uint256 newMultiplier;
         if (multiplierDeltaPercent >= 0) {
             newMultiplier = round.multiplier + ((round.multiplier * uint256(multiplierDeltaPercent)) / 100);
@@ -185,13 +167,9 @@ contract StakingContract is ReentrancyGuard {
         require(round.players.length < round.maxPlayerCount, "Round full");
         require(players[player].availableStakes >= amount + entryFee, "Insufficient available stakes");
 
-        uint256 treasuryFee = (entryFee * treasuryFeePercentage) / 100;
-        uint256 prizeFee = entryFee - treasuryFee;
-
         players[player].availableStakes -= (amount + entryFee);
         players[player].unavailableStakes += amount;
-        treasuryBalance += treasuryFee;
-        prizePoolBalance += prizeFee;
+        treasuryBalance += entryFee;
 
         if (round.playerStakes[player] == 0) {
             round.players.push(player);
