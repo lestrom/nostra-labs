@@ -1,0 +1,3 @@
+[submodule "characterfile"]
+	path = characterfile
+	url = https://github.com/elizaOS/characterfile
