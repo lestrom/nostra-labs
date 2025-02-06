@@ -126,6 +126,48 @@ contract StakingContract is ReentrancyGuard {
         emit RoundInitialized(currentRoundId, maxPlayerCount, threshold, multiplier, expiryBlock);
     }
 
+    // NEW: Event for parameter adjustments
+event RoundParametersAdjusted(uint256 indexed roundId, uint256 newThreshold, uint256 newMultiplier);
+
+// NEW: Dynamic parameter adjustments for an active round, callable by hostAgent (MrsBeauty)
+// This function allows MrsBeauty to adjust the round's threshold and multiplier independently.
+// For example, she can decide to increase the threshold by a certain percentage while decreasing the multiplier.
+function adjustRoundParameters(
+    uint256 roundId,
+    int256 thresholdDeltaPercent,   // e.g., +10 means increase threshold by 10%, -5 means decrease by 5%
+    int256 multiplierDeltaPercent   // e.g., -10 means decrease multiplier by 10%, +15 means increase by 15%
+) external onlyHostAgent {
+    Round storage round = rounds[roundId];
+    require(!round.isResolved, "Round already resolved");
+    require(block.number < round.expiryBlockNumber, "Round expired");
+    require(newThreshold > 0, "Invalid threshold"); // Note: This line is not needed if we compute newThreshold correctly.
+    require(newMultiplier > 0, "Invalid multiplier"); // Same as above.
+
+    uint256 newThreshold;
+    if (thresholdDeltaPercent >= 0) {
+        newThreshold = round.threshold + ((round.threshold * uint256(thresholdDeltaPercent)) / 100);
+    } else {
+        uint256 absDelta = uint256(-thresholdDeltaPercent);
+        uint256 decrease = (round.threshold * absDelta) / 100;
+        newThreshold = (round.threshold > decrease) ? round.threshold - decrease : round.threshold;
+    }
+
+    uint256 newMultiplier;
+    if (multiplierDeltaPercent >= 0) {
+        newMultiplier = round.multiplier + ((round.multiplier * uint256(multiplierDeltaPercent)) / 100);
+    } else {
+        uint256 absDelta = uint256(-multiplierDeltaPercent);
+        uint256 decrease = (round.multiplier * absDelta) / 100;
+        newMultiplier = (round.multiplier > decrease) ? round.multiplier - decrease : round.multiplier;
+    }
+
+    round.threshold = newThreshold;
+    round.multiplier = newMultiplier;
+
+    emit RoundParametersAdjusted(roundId, newThreshold, newMultiplier);
+}
+
+
     function enterRound(uint256 roundId, address player, uint256 amount) external nonReentrant {
         require(msg.sender == hostAgent || msg.sender == player, "Unauthorized");
         Round storage round = rounds[roundId];
