@@ -126,6 +126,20 @@ contract StakingContract is ReentrancyGuard {
         emit RoundInitialized(currentRoundId, maxPlayerCount, threshold, multiplier, expiryBlock);
     }
 
+    // NEW: Dynamic parameter adjustments for an active round, callable by hostAgent (MrsBeauty)
+    function adjustRoundParameters(uint256 roundId, uint256 newThreshold, uint256 newMultiplier) external onlyHostAgent {
+        Round storage round = rounds[roundId];
+        require(!round.isResolved, "Round already resolved");
+        require(block.number < round.expiryBlockNumber, "Round expired");
+        require(newThreshold > 0, "Invalid threshold");
+        require(newMultiplier > 0, "Invalid multiplier");
+
+        round.threshold = newThreshold;
+        round.multiplier = newMultiplier;
+
+        emit RoundParametersAdjusted(roundId, newThreshold, newMultiplier);
+    }
+
     function enterRound(uint256 roundId, address player, uint256 amount) external nonReentrant {
         require(msg.sender == hostAgent || msg.sender == player, "Unauthorized");
         Round storage round = rounds[roundId];
