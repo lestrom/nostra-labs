@@ -15,6 +15,8 @@ contract StakingContract is ReentrancyGuard {
     uint256 public burnPercentage;
 
     event TokensBurned(address indexed user, uint256 amount);
+    event RoundThresholdAdjusted(uint256 indexed roundId, uint256 newThreshold);
+    event RoundMultiplierAdjusted(uint256 indexed roundId, uint256 newMultiplier);
 
     struct Round {
         uint256 maxPlayerCount;
@@ -55,6 +57,11 @@ contract StakingContract is ReentrancyGuard {
 
     modifier onlyTreasuryManager() {
         require(msg.sender == treasuryManager, "Only treasury manager allowed");
+        _;
+    }
+
+    modifier onlyHostOrPlayer(address player) {
+        require(msg.sender == hostAgent || msg.sender == player, "Unauthorized");
         _;
     }
 
@@ -112,7 +119,7 @@ contract StakingContract is ReentrancyGuard {
         uint256 expiryBlock
     ) external onlyHostAgent {
         require(expiryBlock > block.number, "Invalid expiry block");
-        require(multiplier > 0, "Invalid multiplier");
+        require(multiplier >= 100, "Invalid multiplier");
         require(maxPlayerCount > 0, "Invalid player count");
         require(threshold > 0, "Invalid threshold");
 
@@ -126,50 +133,52 @@ contract StakingContract is ReentrancyGuard {
         emit RoundInitialized(currentRoundId, maxPlayerCount, threshold, multiplier, expiryBlock);
     }
 
-    // NEW: Event for parameter adjustments
-event RoundParametersAdjusted(uint256 indexed roundId, uint256 newThreshold, uint256 newMultiplier);
+    function adjustRoundThreshold(
+        uint256 roundId,
+        int256 thresholdDeltaPercent
+    ) external onlyHostAgent {
+        Round storage round = rounds[roundId];
+        require(!round.isResolved, "Round already resolved");
+        require(block.number < round.expiryBlockNumber, "Round expired");
 
-// NEW: Dynamic parameter adjustments for an active round, callable by hostAgent (MrsBeauty)
-// This function allows MrsBeauty to adjust the round's threshold and multiplier independently.
-// For example, she can decide to increase the threshold by a certain percentage while decreasing the multiplier.
-function adjustRoundParameters(
-    uint256 roundId,
-    int256 thresholdDeltaPercent,   // e.g., +10 means increase threshold by 10%, -5 means decrease by 5%
-    int256 multiplierDeltaPercent   // e.g., -10 means decrease multiplier by 10%, +15 means increase by 15%
-) external onlyHostAgent {
-    Round storage round = rounds[roundId];
-    require(!round.isResolved, "Round already resolved");
-    require(block.number < round.expiryBlockNumber, "Round expired");
-    require(newThreshold > 0, "Invalid threshold"); // Note: This line is not needed if we compute newThreshold correctly.
-    require(newMultiplier > 0, "Invalid multiplier"); // Same as above.
+        uint256 newThreshold;
+        if (thresholdDeltaPercent >= 0) {
+            newThreshold = round.threshold + ((round.threshold * uint256(thresholdDeltaPercent)) / 100);
+        } else {
+            uint256 absDelta = uint256(-thresholdDeltaPercent);
+            uint256 decrease = (round.threshold * absDelta) / 100;
+            newThreshold = (round.threshold > decrease) ? round.threshold - decrease : round.threshold;
+        }
+        require(newThreshold > 0, "Invalid threshold");
 
-    uint256 newThreshold;
-    if (thresholdDeltaPercent >= 0) {
-        newThreshold = round.threshold + ((round.threshold * uint256(thresholdDeltaPercent)) / 100);
-    } else {
-        uint256 absDelta = uint256(-thresholdDeltaPercent);
-        uint256 decrease = (round.threshold * absDelta) / 100;
-        newThreshold = (round.threshold > decrease) ? round.threshold - decrease : round.threshold;
+        round.threshold = newThreshold;
+        emit RoundThresholdAdjusted(roundId, newThreshold);
     }
 
-    uint256 newMultiplier;
-    if (multiplierDeltaPercent >= 0) {
-        newMultiplier = round.multiplier + ((round.multiplier * uint256(multiplierDeltaPercent)) / 100);
-    } else {
-        uint256 absDelta = uint256(-multiplierDeltaPercent);
-        uint256 decrease = (round.multiplier * absDelta) / 100;
-        newMultiplier = (round.multiplier > decrease) ? round.multiplier - decrease : round.multiplier;
+    function adjustRoundMultiplier(
+        uint256 roundId,
+        int256 multiplierDeltaPercent
+    ) external onlyHostAgent {
+        Round storage round = rounds[roundId];
+        require(!round.isResolved, "Round already resolved");
+        require(block.number < round.expiryBlockNumber, "Round expired");
+
+
+        uint256 newMultiplier;
+        if (multiplierDeltaPercent >= 0) {
+            newMultiplier = round.multiplier + ((round.multiplier * uint256(multiplierDeltaPercent)) / 100);
+        } else {
+            uint256 absDelta = uint256(-multiplierDeltaPercent);
+            uint256 decrease = (round.multiplier * absDelta) / 100;
+            newMultiplier = (round.multiplier > decrease) ? round.multiplier - decrease : round.multiplier;
+        }
+        require(newMultiplier >= 100, "Multiplier must be at least 100");
+
+        round.multiplier = newMultiplier;
+        emit RoundMultiplierAdjusted(roundId, newMultiplier);
     }
 
-    round.threshold = newThreshold;
-    round.multiplier = newMultiplier;
-
-    emit RoundParametersAdjusted(roundId, newThreshold, newMultiplier);
-}
-
-
-    function enterRound(uint256 roundId, address player, uint256 amount) external nonReentrant {
-        require(msg.sender == hostAgent || msg.sender == player, "Unauthorized");
+    function enterRound(uint256 roundId, address player, uint256 amount) external nonReentrant onlyHostOrPlayer(player) {
         Round storage round = rounds[roundId];
         require(!round.isResolved, "Round already resolved");
         require(block.number < round.expiryBlockNumber, "Round expired");
@@ -194,8 +203,7 @@ function adjustRoundParameters(
         emit TreasuryBalanceChange(treasuryBalance);
     }
 
-    function exitRound(uint256 roundId, address player, uint256 amount) external nonReentrant {
-        require(msg.sender == hostAgent || msg.sender == player, "Unauthorized");
+    function exitRound(uint256 roundId, address player, uint256 amount) external nonReentrant onlyHostOrPlayer(player) {
         Round storage round = rounds[roundId];
         require(!round.isResolved, "Round already resolved");
         require(block.number < round.expiryBlockNumber, "Round expired");
@@ -220,7 +228,11 @@ function adjustRoundParameters(
         uint256[] memory distributions = new uint256[](roundPlayers.length);
 
         if (round.totalStaked >= round.threshold) {
-            uint256 totalReward = round.totalStaked * round.multiplier / 1000;
+            uint256 totalReward = round.totalStaked * round.multiplier / 100;
+            uint256 surplusReward = totalReward - round.totalStaked;
+            require(treasuryBalance >= surplusReward, "Insufficient treasury balance for rewards");
+
+            treasuryBalance -= surplusReward;
 
             for (uint256 i = 0; i < roundPlayers.length; i++) {
                 address player = roundPlayers[i];
@@ -230,11 +242,10 @@ function adjustRoundParameters(
                 distributions[i] = reward;
                 players[player].unavailableStakes -= playerStake;
                 players[player].availableStakes += reward;
-
-                require(gameToken.transfer(player, reward), "Reward transfer failed");
             }
 
             emit RoundResolved(roundId, "THRESHOLD_MET", roundPlayers, distributions);
+            emit TreasuryBalanceChange(treasuryBalance);
         } else {
             for (uint256 i = 0; i < roundPlayers.length; i++) {
                 address player = roundPlayers[i];
@@ -248,7 +259,6 @@ function adjustRoundParameters(
                 require(gameToken.transfer(address(0), amountToBurn), "Burn transfer failed");
                 emit TokensBurned(player, amountToBurn);
 
-                // Add the remaining tokens to the treasury balance.
                 treasuryBalance += amountToTreasury;
             }
 
