@@ -1,6 +1,6 @@
 {
   "address": "",
-  "chat": "https://huggingface.co/gaianet/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q3_K_S.gguf",
+  "chat": "https://huggingface.co/gaianet/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q2_K.gguf",
   "chat_ctx_size": "32768",
   "chat_batch_size": "32",
   "description": "GaiaNet node with a mistral 0.3 7b instruct model.",
