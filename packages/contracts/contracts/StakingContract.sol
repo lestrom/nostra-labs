@@ -206,27 +206,31 @@ contract StakingContract is ReentrancyGuard {
         uint256[] memory distributions = new uint256[](roundPlayers.length);
 
         if (round.totalStaked >= round.threshold) {
+            // Winning round: redistribute the total reward equally among all participants.
             uint256 totalReward = round.totalStaked * round.multiplier / 100;
             uint256 surplusReward = totalReward - round.totalStaked;
             require(treasuryBalance >= surplusReward, "Insufficient treasury balance for rewards");
 
             treasuryBalance -= surplusReward;
+            uint256 numPlayers = round.players.length;
+            uint256 equalReward = totalReward / numPlayers;
 
-            for (uint256 i = 0; i < roundPlayers.length; i++) {
-                address player = roundPlayers[i];
-                uint256 playerStake = round.playerStakes[player];
-                uint256 reward = (playerStake * totalReward) / round.totalStaked;
-
-                distributions[i] = reward;
-                players[player].unavailableStakes -= playerStake;
-                players[player].availableStakes += reward;
+            for (uint256 i = 0; i < numPlayers; i++) {
+                address player = round.players[i];
+                distributions[i] = equalReward;
+                // Remove the player's locked stake
+                players[player].unavailableStakes -= round.playerStakes[player];
+                // Add equal reward to available stakes
+                players[player].availableStakes += equalReward;
+                require(gameToken.transfer(player, equalReward), "Reward transfer failed");
             }
 
-            emit RoundResolved(roundId, "THRESHOLD_MET", roundPlayers, distributions);
+            emit RoundResolved(roundId, "THRESHOLD_MET", round.players, distributions);
             emit TreasuryBalanceChange(treasuryBalance);
         } else {
-            for (uint256 i = 0; i < roundPlayers.length; i++) {
-                address player = roundPlayers[i];
+            // Losing round: for each player, burn 50% of their stake and send the remaining 50% to treasury.
+            for (uint256 i = 0; i < round.players.length; i++) {
+                address player = round.players[i];
                 uint256 playerStake = round.playerStakes[player];
                 distributions[i] = 0;
                 players[player].unavailableStakes -= playerStake;
@@ -240,7 +244,7 @@ contract StakingContract is ReentrancyGuard {
                 treasuryBalance += amountToTreasury;
             }
 
-            emit RoundResolved(roundId, "THRESHOLD_NOT_MET", roundPlayers, distributions);
+            emit RoundResolved(roundId, "THRESHOLD_NOT_MET", round.players, distributions);
             emit TreasuryBalanceChange(treasuryBalance);
         }
     }
