@@ -1,8 +1,8 @@
 import MrsBeautyBaseCharacter from "./data/mrsbeauty.character.json";
 import Knowledge from "./data/knowledge.json";
 const MrsBeautyKnowledgeCharacter = {
-  ...Knowledge,
   ...MrsBeautyBaseCharacter,
+  ...Knowledge,
 };
 
 export { MrsBeautyBaseCharacter, Knowledge, MrsBeautyKnowledgeCharacter };
