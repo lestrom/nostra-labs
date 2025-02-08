@@ -15,9 +15,11 @@ const DeployModule = buildModule("DeployModule", (m) => {
   const networkName = network.name as keyof typeof usdcContracts;
   const usdcTokenAddress = usdcContracts[networkName];
 
-  const nostraToken = m.contract("TestNostraToken", [10]);
+  const nostraToken = m.contract("TestNostraToken", [
+    BigInt(250 * 1e18).toString(),
+  ]);
 
-  const entryFee = 10000;
+  const entryFee = BigInt(5 * 1e18).toString();
   const burnPercent = 50;
 
   const stakingContract = m.contract(

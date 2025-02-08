@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TestNostraToken is ERC20, Ownable {
     uint256 public mintAmount;
-    uint256 constant public TOTAL_SUPPLY = 1000000000;  // 1 billion tokens
+    uint256 constant public TOTAL_SUPPLY = 1000000000 * 10**18;  // 1 billion tokens with 18 decimals
     mapping(address => bool) public hasMinted;
 
     constructor(uint256 _initialMintAmount)
-        ERC20("TestNostraToken", "tNST")  // Updated name and symbol
+        ERC20("TestNostraToken", "tNST")
         Ownable(msg.sender)
     {
         mintAmount = _initialMintAmount;
@@ -26,5 +26,10 @@ contract TestNostraToken is ERC20, Ownable {
 
         hasMinted[msg.sender] = true;
         _mint(msg.sender, mintAmount);
+    }
+
+    function ownerMint(uint256 amount) external onlyOwner {
+        require(totalSupply() + amount <= TOTAL_SUPPLY, "Would exceed total supply");
+        _mint(msg.sender, amount);
     }
 }
