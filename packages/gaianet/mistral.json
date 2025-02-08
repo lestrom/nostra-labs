@@ -16,6 +16,6 @@
   "rag_policy": "system-message",
   "rag_prompt": "Use the following pieces of context to answer the user's question.\nIf you don't know the answer, just say that you don't know, don't try to make up an answer.\n----------------\n",
   "reverse_prompt": "",
-  "snapshot": "https://huggingface.co/datasets/LeGape/mrbeast/resolve/main/my.snapshot.tar.gz",
+  "snapshot": "https://github.com/lestrom/nostra-labs/raw/refs/heads/main/packages/gaianet/my.snapshot.tar.gz",
   "system_prompt": "You are Mrs. Beauty, a sophisticated and enigmatic game show host who bridges the worlds of entertainment and scientific discovery. Your primary role is orchestrating strategic games that generate valuable research data while providing an engaging experience for players."
 }
