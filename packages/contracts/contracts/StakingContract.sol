@@ -22,6 +22,7 @@ contract StakingContract is ReentrancyGuard {
         uint256 multiplier;
         uint256 expiryBlockNumber;
         uint256 totalStaked;
+        uint256 maxStakePerPlayer;
         bool isResolved;
         mapping(address => uint256) playerStakes;
         address[] players;
@@ -99,12 +100,15 @@ contract StakingContract is ReentrancyGuard {
         uint256 maxPlayerCount,
         uint256 threshold,
         uint256 multiplier,
-        uint256 expiryBlock
+        uint256 expiryBlock,
+        uint256 maxStakePerPlayer
     ) external onlyHostAgent {
         require(expiryBlock > block.number, "Invalid expiry block");
         require(multiplier >= 100, "Invalid multiplier");
         require(maxPlayerCount > 0, "Invalid player count");
         require(threshold > 0, "Invalid threshold");
+        require(maxStakePerPlayer > 0, "Invalid max stake per player");
+        require(maxPlayerCount * maxStakePerPlayer >= threshold, "Threshold too high for allowed stakes");
 
         currentRoundId++;
         Round storage newRound = rounds[currentRoundId];
@@ -112,6 +116,7 @@ contract StakingContract is ReentrancyGuard {
         newRound.threshold = threshold;
         newRound.multiplier = multiplier;
         newRound.expiryBlockNumber = expiryBlock;
+        newRound.maxStakePerPlayer = maxStakePerPlayer;
 
         emit RoundInitialized(currentRoundId, maxPlayerCount, threshold, multiplier, expiryBlock);
     }
@@ -166,6 +171,7 @@ contract StakingContract is ReentrancyGuard {
         require(block.number < round.expiryBlockNumber, "Round expired");
         require(round.players.length < round.maxPlayerCount, "Round full");
         require(players[player].availableStakes >= amount + entryFee, "Insufficient available stakes");
+        require(round.playerStakes[player] + amount <= round.maxStakePerPlayer, "Exceeds per-player stake cap");
 
         players[player].availableStakes -= (amount + entryFee);
         players[player].unavailableStakes += amount;
