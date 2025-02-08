@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract SwapEscrow is Ownable {
-    IERC20 public testNostraToken; // Updated to TestNostraToken (tNST)
+    IERC20 public testNostraToken;
     IERC20 public usdcToken;
 
     uint256 public constant SWAP_RATIO = 1000; // 1000 tNST = 1 USDC

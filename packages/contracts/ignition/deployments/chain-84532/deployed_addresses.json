@@ -1,4 +1,5 @@
 {
-  "DeployModule#TestNostraToken": "0x671e1f940153997aFa492D678e6EF282B5De4be7",
-  "DeployModule#StakingContract": "0x3201fAd38640D0459ca4E8126e17f69aF67f73f8"
+  "DeployModule#TestNostraToken": "0xD4843aA0DF248d301D17c13742cFFCcF3f0822Ea",
+  "DeployModule#StakingContract": "0x6f39d3f603634b77544EBa4b9C98A68003650Cd3",
+  "DeployModule#SwapEscrow": "0xf5D81D0cFc3ddaD371d7b8bcAD7E3E0ce9904d28"
 }
