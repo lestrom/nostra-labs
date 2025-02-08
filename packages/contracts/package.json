@@ -2,11 +2,13 @@
   "name": "contracts",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -rf ignition/deployments",
-    "depl": "sh deploy.sh"
+    "depl": "sh deploy.sh",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -16,11 +18,15 @@
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.12",
     "hardhat": "^2.22.18",
-    "install": "^0.13.0"
+    "install": "^0.13.0",
+    "typescript": "5.3.3"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.9",
     "@openzeppelin/contracts": "^5.2.0",
     "dotenv": "^16.4.7"
+  },
+  "peerDependencies": {
+    "ethers": "6.9.0"
   }
 }
