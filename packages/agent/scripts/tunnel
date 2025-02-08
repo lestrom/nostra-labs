@@ -80,11 +80,7 @@ const main = async () => {
     await updateEnvFile(server.url(), ENV_PATH, "NGROK_URL");
     // await updateEnvFile(client.url(), ENV_PATH, "NEXT_PUBLIC_HOSTNAME");
     // await updateEnvFile(client.url(), CLIENT_ENV_PATH, "NEXT_PUBLIC_HOSTNAME");
-
-    setInterval(() => {
-      console.log("API available at:", server.url());
-      // console.log("Front-end available at:", client.url());
-    }, 60 * 1000);
+    console.log("API available at:", server.url());
   } catch (error) {
     console.error("NGROK Error:", error);
     throw error;

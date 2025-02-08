@@ -1,10 +1,10 @@
 import { BaseService } from "./base.service.js";
 import {
   AgentRuntime,
-  Character,
   ModelProviderName,
   elizaLogger,
   MemoryManager,
+  Character,
 } from "@ai16z/eliza";
 
 elizaLogger.closeByNewLine = false;
@@ -39,7 +39,7 @@ import { Bot, Context } from "grammy";
 import { bootstrapPlugin } from "@ai16z/plugin-bootstrap";
 
 import announceGameEventPlugin from "../plugins/nostra.plugin.js";
-import { MrsBeautyKnowledgeCharacter } from "../../../../characters/dist/index.js";
+import { MrsBeautyBaseCharacter } from "../../../../characters/dist/index.js";
 
 const MAX_MESSAGE_LENGTH = 4096; // Telegram's max message length
 
@@ -530,7 +530,7 @@ export class ElizaService extends BaseService {
     super();
 
     // Load character from json file
-    const character = MrsBeautyKnowledgeCharacter as Character;
+    const character = MrsBeautyBaseCharacter as Character;
 
     const sqlitePath = path.join(__dirname, "..", "..", "..", "eliza.sqlite");
     elizaLogger.info("Using SQLite database at:", sqlitePath);

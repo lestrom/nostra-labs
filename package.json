@@ -2,12 +2,10 @@
   "name": "nostra-labs",
   "version": "1.0.0",
   "scripts": {
-    "build": "pnpm build:characters && pnpm build:contracts && pnpm build:agent && pnpm build:web",
+    "build": "pnpm build:characters && pnpm build:contracts",
     "dev": "pnpm -r dev",
     "build:characters": "pnpm --filter characters build",
-    "build:contracts": "pnpm --filter contracts build",
-    "build:agent": "pnpm --filter agent build",
-    "build:web": "pnpm --filter web build"
+    "build:contracts": "pnpm --filter contracts build"
   },
   "description": "Nostra monorepo",
   "keywords": [],

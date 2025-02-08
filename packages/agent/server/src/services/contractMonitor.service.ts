@@ -7,6 +7,7 @@ import {
   TestNostraToken__factory,
 } from "../../../../contracts/dist/index.js";
 import { Context } from "grammy";
+import { ethers } from "ethers";
 
 dotenv.config();
 
@@ -97,11 +98,14 @@ export class ContractMonitorService extends BaseService {
     // eslint-disable-next-line no-unused-vars
     callback: (msg: Context) => void
   ): void {
-    // const { rpc } = config;
-    // const provider = new ethers.JsonRpcProvider(rpc);
+    const { rpc } = config;
+    const provider = new ethers.JsonRpcProvider(rpc);
 
     const stakingContract = StakingContract__factory.connect(
-      config.StakingContractAddress
+      config.StakingContractAddress,
+      {
+        provider,
+      }
     );
 
     const event = stakingContract.getEvent("Staked");
@@ -121,11 +125,12 @@ export class ContractMonitorService extends BaseService {
     config: NetworkConfig,
     callback: (msg: Context) => void
   ): void {
-    // const { rpc } = config;
-    // const provider = new ethers.JsonRpcProvider(rpc);
+    const { rpc } = config;
+    const provider = new ethers.JsonRpcProvider(rpc);
 
     const stakingContract = TestNostraToken__factory.connect(
-      config.StakingContractAddress
+      config.StakingContractAddress,
+      { provider }
     );
 
     const event = stakingContract.getEvent("Transfer");
