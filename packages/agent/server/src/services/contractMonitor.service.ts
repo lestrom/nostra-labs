@@ -30,7 +30,7 @@ const telegramMessageHandlerTemplate =
 # Knowledge
 {{knowledge}}
 
-# Task: Generate game updates in the character of {{agentName}}. Use the provided context to generate a post on the game progress. Use TNST token instead of ETH in the post.
+# Task: Generate game updates in the character of {{agentName}}. Use the provided context to generate a post on the game progress. Use TNST token instead of ETH in the post. Use 18 decimals for the token amounts, do the unit conversion before posting.
 About {{agentName}}:
 {{bio}}
 {{lore}}
