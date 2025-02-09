@@ -4,6 +4,8 @@ module.exports = {
   plugins: ['@typescript-eslint'],
   parserOptions: {},
   rules: {
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
     'react/jsx-filename-extension': ['error', { extensions: ['.js', '.jsx', '.ts', '.tsx'] }],
     '@typescript-eslint/array-type': 'error',
     '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
@@ -17,9 +19,8 @@ module.exports = {
     'jsx-a11y/no-static-element-interactions': 'off',
     'jsx-a11y/control-has-associated-label': 'off',
     'jsx-a11y/no-autofocus': 'off',
-    'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': [
-      'info',
+      'off',
       { argsIgnorePattern: '^_', ignoreRestSiblings: true },
     ],
     'no-use-before-define': 'off',

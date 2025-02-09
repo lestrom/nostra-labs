@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { formatEther, parseUnits, getBigInt } from 'ethers';
+import { formatEther } from 'ethers';
 import { Button } from '@/components/ui/button'; // Your UI button component (or use OnchainKit’s if available)
 import {
   NostraTokenAddress,
@@ -10,7 +10,6 @@ import {
 } from './address-abi';
 import { WalletComponents } from '@/components/buttons/walletConnect'; // Your wallet connection components
 import AgentRoute from '@/routes/chat';
-import MintComponent from './buttons/mint';
 import '@coinbase/onchainkit/styles.css';
 import StakeUnstake from './StakeUnstake';
 import { useOnchainKit } from '@coinbase/onchainkit';
@@ -19,13 +18,13 @@ export default function Dashboard() {
   const { address } = useOnchainKit();
   // Local state for wallet, balances, and loading indicators
   const [userAddress, setUserAddress] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [_isConnected, setIsConnected] = useState(false);
   const [stakedBalance, setStakedBalance] = useState<ethers.BigNumberish>(BigInt(0));
   const [availableBalance, setAvailableBalance] = useState<ethers.BigNumberish>(BigInt(0));
   const [tokenBalance, setTokenBalance] = useState<ethers.BigNumberish>(BigInt(0));
-  const [isMinting, setIsMinting] = useState(false);
-  const [isStaking, setIsStaking] = useState(false);
-  const [isUnstaking, setIsUnstaking] = useState(false);
+  const [isMinting, _setIsMinting] = useState(false);
+  const [isStaking, _setIsStaking] = useState(false);
+  const [isUnstaking, _setIsUnstaking] = useState(false);
 
   // Initialize ethers provider (assumes MetaMask or similar is installed)
   const provider = new ethers.BrowserProvider(window.ethereum);
