@@ -13,6 +13,7 @@ import AgentRoute from '@/routes/chat';
 import '@coinbase/onchainkit/styles.css';
 import StakeUnstake from './StakeUnstake';
 import { useOnchainKit } from '@coinbase/onchainkit';
+import MintComponent from './buttons/mint';
 
 export default function Dashboard() {
   const { address } = useOnchainKit();
@@ -109,7 +110,13 @@ export default function Dashboard() {
         {/* --- Main Content: Either Mint/Stake or Chat Card --- */}
         <div className="flex h-screen flex-col items-center justify-center gap-8">
           {!showChatCard ? (
-            <StakeUnstake />
+            <>
+              <div>
+                <MintComponent />
+              </div>
+
+              <StakeUnstake />
+            </>
           ) : (
             <div className="w-full max-w-lg rounded-lg border bg-white p-8 shadow-xl">
               {/* Mrs. Beauty Chat Card */}
