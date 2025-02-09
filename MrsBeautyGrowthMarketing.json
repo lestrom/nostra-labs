@@ -1,0 +1,204 @@
+{
+  "config": {
+    "apiSettings": {
+      "bearerToken": "${TWITTER_API_KEY}", // Use env variables in production
+      "userID": "${TWITTER_USER_ID}",
+      "apiVersion": "2",
+      "rateLimitBuffer": 0.2 // Keep 20% headroom
+    },
+    "growthTargets": {
+      "following": {
+        "maxTotal": 500, // Increased for viable growth
+        "minQualityScore": 0.85, // Adjusted for realistic targeting
+        "relevanceTopics": [
+          "AI Gaming",
+          "Web3",
+          "GameFi",
+          "DeFi",
+          "Crypto",
+          "AI",
+          "Blockchain"
+        ],
+        "qualityMetrics": { // Added quality control
+          "minActivityLevel": 0.7,
+          "minEngagementRate": 2.5,
+          "maxFollowingRatio": 3.0
+        }
+      },
+      "followers": {
+        "twoWeekTarget": 10000,
+        "dailyGrowthMinimum": 500,
+        "sustainedDailyGrowth": 100,
+        "failureHandling": {
+          "continueOnMissedTarget": true,
+          "adjustmentPeriod": 86400000,
+          "retryStrategy": "exponential_backoff",
+          "growthMultipliers": { // Added adaptive scaling
+            "day1Miss": 1.2,
+            "day3Miss": 1.5,
+            "day5Miss": 2.0
+          }
+        }
+      }
+    },
+    "automationLimits": {
+      "daily": {
+        "follows": 50, // Realigned with targets
+        "unfollows": 50,
+        "likes": 100, // Twitter's max is 500/day
+        "replies": 50,
+        "retweets": 10,
+        "coolingThresholds": { // Added safety
+          "follows": 0.8,
+          "replies": 0.75
+        }
+      },
+      "cooldownPeriod": 1200000, // 20 minutes
+      "continuousOperation": {
+        "enabled": true,
+        "resetDaily": true,
+        "failureProtocols": { // Added failure modes
+          "consecutiveErrors": 5,
+          "action": "safe_mode"
+        }
+      }
+    },
+    "viralLoops": {
+      "eliteAccounts": [
+        "luna_virtuals",
+        "HailBrains",
+        "ai16zeliza",
+        "Vader_AI_"
+      ],
+      "engagementStrategies": { // Added depth
+        "commentDepth": 3,
+        "retweetWithInsight": true,
+        "strategicLikePatterns": [
+          "author+2_followers",
+          "topic_influencers"
+        ]
+      },
+      "topics": [
+        "AI Gaming",
+        "Web3",
+        "GameFi",
+        "DeFi",
+        "Crypto",
+        "AI",
+        "Blockchain"
+      ],
+      "postQuality": {
+        "minLikes": 50,
+        "retryOnMissedMetrics": true,
+        "successThresholds": { // Added performance tracking
+          "followBackRate": 0.15,
+          "replyEngagement": 0.25
+        }
+      }
+    },
+    "analytics": {
+      "metrics": {
+        "core": [
+          "dailyFollowerGrowth",
+          "totalFollowers",
+          "postLikes",
+          "replyEngagement",
+          "conversionRates" // Added
+        ],
+        "tracking": {
+          "interval": 1800000, // 30 minutes
+          "retention": 2592000000,
+          "recordMissedTargets": true,
+          "benchmarks": { // Added comparison
+            "industryStandard": true,
+            "customBaseline": 0.15
+          }
+        }
+      },
+      "alerts": {
+        "missedDailyTarget": true,
+        "trendAnalysis": true,
+        "anomalyDetection": { // Added security
+          "spikeThreshold": 2.5,
+          "dropThreshold": 0.4
+        }
+      }
+    },
+    "safety": {
+      "rateLimit": {
+        "maxRetries": 3,
+        "backoffPeriod": 900000,
+        "adaptiveCooling": true // Added
+      },
+      "errorHandling": {
+        "continueOnFailure": true,
+        "logErrors": true,
+        "errorClassifications": { // Added granular handling
+          "transient": [502, 503],
+          "permanent": [401, 403],
+          "quota": [429]
+        }
+      },
+      "compliance": {
+        "ensureAgentCompliance": true,
+        "organicGrowthOnly": true,
+        "complianceCheckInterval": 1800000, // 30 minutes
+        "complianceActions": {
+          "onNonCompliantAction": "full_audit",
+          "logComplianceViolations": true,
+          "autoPolicyCheck": { // Added automation
+            "twitterAPIPolicies": true,
+            "localRegulations": true
+          }
+        },
+        "prohibitedBehaviors": [ // Explicitly defined
+          "bulk_following",
+          "duplicate_content",
+          "spam_patterns"
+        ]
+      }
+    }
+  },
+  "state": {
+    "dailyStats": {
+      "follows": 0,
+      "unfollows": 0,
+      "likes": 0,
+      "replies": 0,
+      "retweets": 0,
+      "targetsMet": true,
+      "qualityScores": { // Added quality tracking
+        "followBackRate": 0.0,
+        "engagedFollowers": 0
+      }
+    },
+    "metrics": {
+      "lastUpdateTime": "2024-02-09T00:00:00Z",
+      "followersAtLastUpdate": 0,
+      "missedTargetDays": 0,
+      "performanceBenchmarks": {} // Added
+    },
+    "system": {
+      "lastComplianceCheck": "",
+      "rateLimitStatus": {},
+      "safetyLock": false
+    }
+  },
+  "_productionNotes": {
+    "requiredInfrastructure": [
+      "Redis_for_state_persistence",
+      "Prometheus_metrics",
+      "Sentry_error_tracking"
+    ],
+    "recommendedPractices": [
+      "Daily_config_validation",
+      "Weekly_policy_audits",
+      "Shadow_mode_testing"
+    ],
+    "emergencyProtocols": {
+      "suddenGrowthSpike": "enable_verification_checks",
+      "errorSurge": "switch_to_readonly_mode",
+      "complianceAlert": "full_activity_freeze"
+    }
+  }
+}
