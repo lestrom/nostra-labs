@@ -1,0 +1,81 @@
+**Catalyst Web App** is the front-end interface for the Nostra Labs' game, Catalyst. The app features a retro arcade-inspired design where players connect their wallets, mint tokens, stake funds, and interact with our AI host, **MrsBeauty**—all while participating in strategic game rounds that explore the dynamics of cooperation and free riding.
+
+---
+
+## Architecture
+
+### On-Chain Smart Contracts
+- **Staking & Redistribution:**  
+  Manages token locking, round initialization, and resolution. In winning rounds, rewards are redistributed equally among participants; in losing rounds, 50% of each player's stake is burned and the remaining 50% is added to the treasury.
+- **Treasury Pool:**  
+  Collects entry fees and funds DeSci investments while processing loss rebates.
+- **Trust Score Oracle:**  
+  *(Planned)* Tracks player behavior to update reputations.
+
+### Off-Chain AI Agent (MrsBeauty)
+- **Rule Engine:**  
+  Dynamically adjusts game parameters (thresholds and multipliers) based on real-time game data.
+- **Behavioral Analytics:**  
+  Tags player actions and generates research datasets.
+- **Telegram Integration:**  
+  Hosts games via a chatbot interface.
+
+### Web UI
+- **Retro Arcade Design:**  
+  A vintage-inspired interface where players connect wallets, mint tokens, stake funds, and view real-time stats.
+- **Live Dashboards (in dev):**  
+  Provide ongoing updates on active rounds, treasury health, and research insights.
+
+---
+
+## UX/UI Flow
+
+1. **Pre-Game Access & Arcade Landing**  
+   - **Landing Page (https://www.nostralabs.org/):**  
+     - Displays a full-page arcade room background.
+     - Shows a transparent navbar (logo on the top-left; Connect Wallet and social buttons on the top-right).
+     - Features an arcade machine with a PLAY button.
+   - **Interaction:**  
+     - When the player clicks PLAY, the UI transitions into the game environment.
+
+2. **Post-Connection UI Flow**  
+   - **Wallet Connection:**  
+     - The player connects their wallet.
+   - **Staked Balance Check:**  
+     - If the player already has a stake in the StakingContract, the MrsBeauty Chat Card appears immediately.
+     - If not, the UI displays two central buttons: Mint and Stake.
+
+3. **Token Minting & Staking**  
+   - **Token Minting:**  
+     - The **Mint** button calls the `mint()` method from the NostraToken contract.
+     - Players must eventually hold at least 300 tNST to be eligible to enter games.
+   - **Token Staking:**  
+     - The **Stake** button (initially disabled until the player holds tokens) calls the `stake()` method from the StakingContract.
+     - Players can stake up to 100 tNST per round.
+   - **After Staking:**  
+     - The UI refreshes and the MrsBeauty Chat Card is shown, unlocking in-game interactions.
+
+4. **MrsBeauty Chat Card**  
+   - Appears only after a successful stake.
+   - Provides a chat interface for interacting with the AI host.
+   - Displays the user's staked tNST balance above the chat input.
+
+5. **Unstaking**  
+   - An **Unstake** button (placed near the Connect Wallet button) calls the `unstake()` method.
+   - The UI continually shows the Available to Unstake Balance (tokens not locked in rounds).
+
+6. **Always-Visible Information**  
+   - **Staked Balance:** Total tNST staked by the user.
+   - **Available Balance:** Tokens available for unstaking.
+   - **Connected Wallet Indicator:** Shown (e.g., at the bottom-left) to confirm wallet connection.
+
+7. **In-Game Functions Overview**  
+   - **Round Participation:**  
+     - View active rounds via functions like `getActiveRounds()`, `getRoundInfo(roundId)`, and `getRoundPlayers(roundId)`.
+     - Join rounds with `enterRound(roundId, player, amount)` and exit rounds with `exitRound(roundId, player, amount)`.
+   - **Round Resolution:**  
+     - When a round expires, `resolveRound(roundId)` determines the outcome:
+       - **Winning Rounds:** Rewards are distributed equally among all participants.
+       - **Losing Rounds:** 50% of each player's stake is burned, and the remaining 50% is added to the treasury.
+   - **Additional Functions:**  
+     - Treasury functions (e.g., `investDeSci()`) and round parameter adjustments (e.g., `adjustRoundThreshold()`, `adjustRoundMultiplier()`) are available for dynamic tuning.
