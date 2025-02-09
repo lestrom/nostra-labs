@@ -3,7 +3,9 @@ import axios, { AxiosError } from "axios";
 import crypto from "crypto";
 import { NgrokService } from "../services/ngrok.service.js";
 import { CacheService } from "../services/cache.service.js";
-import { getCardHTML } from "../utils.js";
+import { getCardHTML, getCollablandApiUrl } from "../utils.js";
+import { IAccountInfo } from "../types.js";
+import { TwitterService } from "../services/twitter.service.js";
 
 const router = Router();
 
@@ -239,6 +241,123 @@ router.get("/card/:slug/index.html", (req: Request, res: Response) => {
   console.log("Bot Username:", botUsername);
   res.setHeader("Content-Type", "text/html");
   res.send(getCardHTML(botUsername, claimURL));
+});
+
+router.get("/getAccountAddress", async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.query;
+    console.log("Getting account address for Twitter User ID:", userId);
+    if (!userId) {
+      throw new Error("No user id provided");
+    }
+    const v2ApiUrl = getCollablandApiUrl().replace("v1", "v2");
+    // This AccountKit API returns counterfactually calculated smart account addresses for a GitHub/Twitter user
+    const { data } = await axios.post<IAccountInfo>(
+      `${v2ApiUrl}/evm/calculateAccountAddress`,
+      {
+        platform: "twitter",
+        userId: userId,
+      },
+      {
+        headers: {
+          "X-API-KEY": process.env.COLLABLAND_API_KEY!,
+        },
+      }
+    );
+    console.log(
+      "[Twitter Success] Account address for Twitter User ID:",
+      userId,
+      data
+    );
+    // We need base smart account addresses for Wow.XYZ
+    const accountAddress = data.evm.find(
+      (account) => account.chainId === 8453
+    )?.address;
+    res.json({
+      success: true,
+      account: accountAddress,
+    });
+  } catch (error) {
+    console.error("[Twitter Success] Error:", error);
+    if (error instanceof AxiosError) {
+      console.error("[Twitter Success] Response:", error.response?.data);
+    }
+    res.status(400).json({
+      success: false,
+      error: "Failed to fetch profile information",
+    });
+  }
+});
+
+router.post("/tweetCard", async (req: Request, res: Response) => {
+  try {
+    const me = await TwitterService.getInstance().me;
+    const { txHash: _txHash, tokenId } = req.body;
+    const token = req.headers["x-auth-token"] as string;
+    if (!token) {
+      throw new Error("No token provided");
+    }
+    const claimURL = process.env.NEXT_PUBLIC_HOSTNAME! + `/claim/${tokenId}`;
+    const slug =
+      Buffer.from(claimURL).toString("base64url") +
+      ":" +
+      Buffer.from(me?.username ?? "").toString("base64url");
+    const ngrokURL = await NgrokService.getInstance().getUrl();
+    const claimURLWithNgrok =
+      ngrokURL + `/auth/twitter/card/${slug}/index.html`;
+    console.log("[Tweet Card] Claim URL:", claimURLWithNgrok);
+    const message = `🎉 Just claimed my @wow tokens through @${me?.username} Claim yours now, get started below! 🚀\n\n${claimURLWithNgrok}`;
+    console.log("[Tweet Card] Sending tweet:", message);
+    const { data } = await axios.post(
+      "https://api.twitter.com/2/tweets",
+      {
+        text: message,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("[Tweet Card] Tweet sent:", data);
+    const tweetId = data.data.id;
+    const txHash = _txHash;
+    const replyMessage = `Transaction hash: https://basescan.org/tx/${txHash}`;
+    console.log("[Tweet Card] Replying to tweet:", replyMessage);
+    const { data: replyData } = await axios.post(
+      "https://api.twitter.com/2/tweets",
+      {
+        text: replyMessage,
+        reply: {
+          in_reply_to_tweet_id: tweetId,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("[Tweet Card] Reply sent:", replyData);
+
+    const tweetUrl = `https://twitter.com/i/web/status/${tweetId}`;
+    console.log("[Twitter Success] Tweet sent successfully:", tweetUrl);
+
+    res.json({
+      success: true,
+      tweetId,
+      tweetUrl,
+    });
+  } catch (error) {
+    console.error("[Tweet Card] Error:", error);
+    if (error instanceof AxiosError) {
+      console.error("[Tweet Card] Response:", error.response?.data);
+    }
+    res.status(400).json({
+      success: false,
+      error: "Failed to send tweet",
+    });
+  }
 });
 
 export default router;

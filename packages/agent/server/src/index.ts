@@ -106,7 +106,7 @@ app.listen(port, async () => {
     try {
       // try starting the twitter service
       const twitterService = await TwitterService.getInstance();
-      twitterService.start();
+      await twitterService.start();
       console.log(
         "Twitter Bot Profile:",
         JSON.stringify(twitterService.me, null, 2)

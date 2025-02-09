@@ -53,7 +53,7 @@ export class AnnounceGameEvent extends CollabLandBaseAction {
         console.log("Announcing game event:", message);
 
         const telegramSubscriptions = await sessionDatabase.getSubscribers();
-        console.log(telegramSubscriptions);
+
         for (const subscription of telegramSubscriptions) {
           await TelegramService.getInstance().sendMessage(
             subscription.chatId,

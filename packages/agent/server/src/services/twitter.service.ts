@@ -63,6 +63,7 @@ export class TwitterService extends BaseService {
   public async sendTweet(message: string): Promise<void> {
     const twitterClient = this.getScraper();
     await twitterClient.sendTweet(message);
+    return;
   }
 
   public async stop(): Promise<void> {
