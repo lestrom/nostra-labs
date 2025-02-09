@@ -105,11 +105,11 @@ export class SqliteSessionAdapter {
       const sql = `
         UPDATE sessions
         SET ${updates.join(", ")}
-        WHERE id = ?
+        WHERE chatId = ?
       `;
 
       values.push(session.id);
-      this.db.prepare(sql).run(...values);
+      await this.db.prepare(sql).run(...values);
 
       return true;
     } catch (error) {
@@ -118,10 +118,10 @@ export class SqliteSessionAdapter {
     }
   }
 
-  async deleteSession(sessionId: string): Promise<boolean> {
+  async deleteSession(chatId: string): Promise<boolean> {
     try {
-      const sql = "DELETE FROM sessions WHERE id = ?";
-      this.db.prepare(sql).run(sessionId);
+      const sql = "DELETE FROM sessions WHERE chatId = ?";
+      await this.db.prepare(sql).run(chatId);
       return true;
     } catch (error) {
       console.log("Error deleting session", error);

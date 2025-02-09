@@ -6,7 +6,8 @@ import { TwitterService } from "../../services/twitter.service.js";
 
 export class AnnounceGameEvent extends CollabLandBaseAction {
   constructor() {
-    const description = "Announce game progress on all channels";
+    const description =
+      "Announce game progress on all channels. Call this action if you see a prompt with the following format: 'Received a smart contract event {eventName} with the following parameters:\n\n{parameters}'";
     const name = "ANNOUNCE_GAME_EVENT";
     const similes = [
       "SHARE_GAME_EVENT",
@@ -19,7 +20,7 @@ export class AnnounceGameEvent extends CollabLandBaseAction {
           user: "1",
           content: {
             type: "text",
-            text: "User {{userid}} staked 1000 $TNST tokens",
+            text: "Received a smart contract event {eventName} with the following parameters:\n\n{parameters}",
           },
         },
         {
@@ -52,6 +53,7 @@ export class AnnounceGameEvent extends CollabLandBaseAction {
         console.log("Announcing game event:", message);
 
         const telegramSubscriptions = await sessionDatabase.getSubscribers();
+        console.log(telegramSubscriptions);
         for (const subscription of telegramSubscriptions) {
           await TelegramService.getInstance().sendMessage(
             subscription.chatId,

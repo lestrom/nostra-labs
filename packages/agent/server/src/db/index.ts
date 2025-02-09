@@ -27,12 +27,16 @@ class SessionDb {
     return this.db.getSubscribedSessions();
   }
 
+  public async hasSubscriber(chatId: string) {
+    return Boolean(await this.db.getSessionByChatId(chatId));
+  }
+
   removeSubscriber(chatId: string) {
     return this.db.deleteSession(chatId);
   }
 
-  addSubscriber(chatId: string, name: string): void {
-    this.db.createSession({ chatId, name, subscribed: true });
+  addSubscriber(chatId: string, name: string) {
+    return this.db.createSession({ chatId, name, subscribed: true });
   }
 }
 

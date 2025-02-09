@@ -22,7 +22,7 @@ import {
   Content,
   HandlerCallback,
   IAgentRuntime,
-  IImageDescriptionService,
+  // IImageDescriptionService,
   Memory,
   ModelClass,
   State,
@@ -130,7 +130,7 @@ const telegramMessageHandlerTemplate =
 # Knowledge
 {{knowledge}}
 
-# Task: Generate dialog and actions for the character {{agentName}}.
+# Task: Generate game updates in the character of {{agentName}}. Use the provided context to generate a post on the game progress.
 About {{agentName}}:
 {{bio}}
 {{lore}}
@@ -162,7 +162,7 @@ Thread of Tweets You Are Replying To:
 export class MessageManager {
   public bot: Bot<Context>;
   private runtime: IAgentRuntime;
-  private imageService: IImageDescriptionService;
+  // private imageService: IImageDescriptionService;
 
   constructor(bot: Bot<Context>, runtime: IAgentRuntime) {
     this.bot = bot;
@@ -170,45 +170,45 @@ export class MessageManager {
   }
 
   // Process image messages and generate descriptions
-  private async processImage(
-    message: Message
-  ): Promise<{ description: string } | null> {
-    // elizaLogger.info(
-    //     "🖼️ Processing image message:",
-    //     JSON.stringify(message, null, 2)
-    // );
+  // private async processImage(
+  //   message: Message
+  // ): Promise<{ description: string } | null> {
+  //   // elizaLogger.info(
+  //   //     "🖼️ Processing image message:",
+  //   //     JSON.stringify(message, null, 2)
+  //   // );
 
-    try {
-      let imageUrl: string | null = null;
+  //   try {
+  //     let imageUrl: string | null = null;
 
-      // Handle photo messages
-      if ("photo" in message && message.photo!.length > 0) {
-        const photo = message.photo![message.photo!.length - 1];
-        const fileLink = await this.bot.api.getFile(photo.file_id);
-        imageUrl = fileLink.toString();
-      }
-      // Handle image documents
-      else if (
-        "document" in message &&
-        message.document?.mime_type?.startsWith("image/")
-      ) {
-        const doc = message.document;
-        const fileLink = await this.bot.api.getFile(doc.file_id);
-        imageUrl = fileLink.toString();
-      }
+  //     // Handle photo messages
+  //     if ("photo" in message && message.photo!.length > 0) {
+  //       const photo = message.photo![message.photo!.length - 1];
+  //       const fileLink = await this.bot.api.getFile(photo.file_id);
+  //       imageUrl = fileLink.toString();
+  //     }
+  //     // Handle image documents
+  //     else if (
+  //       "document" in message &&
+  //       message.document?.mime_type?.startsWith("image/")
+  //     ) {
+  //       const doc = message.document;
+  //       const fileLink = await this.bot.api.getFile(doc.file_id);
+  //       imageUrl = fileLink.toString();
+  //     }
 
-      if (imageUrl) {
-        const { title, description } =
-          await this.imageService.describeImage(imageUrl);
-        const fullDescription = `[Image: ${title}\n${description}]`;
-        return { description: fullDescription };
-      }
-    } catch (error) {
-      console.error("❌ Error processing image:", error);
-    }
+  //     if (imageUrl) {
+  //       const { title, description } =
+  //         await this.imageService.describeImage(imageUrl);
+  //       const fullDescription = `[Image: ${title}\n${description}]`;
+  //       return { description: fullDescription };
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Error processing image:", error);
+  //   }
 
-    return null; // No image found
-  }
+  //   return null; // No image found
+  // }
 
   // Decide if the bot should respond to the message
   private async _shouldRespond(
@@ -216,7 +216,6 @@ export class MessageManager {
     state: State
   ): Promise<boolean> {
     // Respond if bot is mentioned
-
     if (
       "text" in message &&
       message.text?.includes(`@${this.bot.botInfo?.username}`)
@@ -228,7 +227,6 @@ export class MessageManager {
     if (message.chat.type === "private") {
       return true;
     }
-
     // Respond to images in group chats
     if (
       "photo" in message ||
@@ -311,11 +309,13 @@ export class MessageManager {
   ): Promise<Content | null> {
     const { userId, roomId } = message;
     elizaLogger.debug("[_generateResponse] check1");
+
     const response = await generateMessageResponse({
       runtime: this.runtime,
       context,
       modelClass: ModelClass.MEDIUM,
     });
+
     elizaLogger.debug("[_generateResponse] check2");
     if (!response) {
       console.error("❌ No response from generateMessageResponse");
@@ -346,6 +346,7 @@ export class MessageManager {
     ) {
       return;
     }
+
     if (
       this.runtime.character.clientConfig?.telegram
         ?.shouldIgnoreDirectMessages &&
@@ -380,7 +381,7 @@ export class MessageManager {
       ) as UUID;
 
       // Handle images
-      const imageInfo = await this.processImage(message);
+      // const imageInfo = await this.processImage(message);
 
       // Get text or caption
       let messageText = "";
@@ -391,14 +392,11 @@ export class MessageManager {
       }
 
       // Combine text and image description
-      const fullText = imageInfo
-        ? `${messageText} ${imageInfo.description}`
-        : messageText;
+      const fullText = messageText;
 
       if (!fullText) {
         return; // Skip if no content
       }
-
       const content: Content = {
         text: fullText,
         source: "telegram",
@@ -413,7 +411,6 @@ export class MessageManager {
       };
 
       // Create memory for the message
-
       const memory = await this.runtime.messageManager.addEmbeddingToMemory({
         id: messageId,
         agentId,
@@ -549,11 +546,12 @@ export class ElizaService extends BaseService {
     try {
       this.runtime = new AgentRuntime({
         databaseAdapter: db,
-        token: process.env.OPENAI_API_KEY || "",
+
+        token:
+          process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || "",
         modelProvider: character.modelProvider || ModelProviderName.OPENAI,
         character,
         conversationLength: 4096,
-
         plugins: [bootstrapPlugin, announceGameEventPlugin],
         cacheManager: new CacheManager(new MemoryCacheAdapter()),
         logging: true,
@@ -584,17 +582,34 @@ export class ElizaService extends BaseService {
       await sessionDatabase.init();
 
       //register AI based command handlers here
-      this.bot.command("subscribe", (ctx) => {
-        sessionDatabase.addSubscriber(
-          ctx.chat.id.toString(),
-          ctx.chat.username ?? ""
+      this.bot.command("subscribe", async (ctx) => {
+        const hasSubscription = await sessionDatabase.hasSubscriber(
+          ctx.chat.id.toString()
         );
-        ctx.reply("Subscribed to show! Welcome!");
+
+        if (!hasSubscription) {
+          await sessionDatabase.addSubscriber(
+            ctx.chat.id.toString(),
+            ctx.chat.username ?? ""
+          );
+          ctx.match = "Hello, i want to subscribe to the show!";
+          this.messageManager.handleMessage(ctx);
+        } else ctx.reply("You are already subscribed to the show, darling!");
       });
-      this.bot.command("unsubscribe", (ctx) => {
-        sessionDatabase.removeSubscriber(ctx.chat.id.toString());
-        ctx.reply("Unsubscribed from show! Goodbye!");
+      this.bot.command("unsubscribe", async (ctx) => {
+        const hasSubscription = await sessionDatabase.hasSubscriber(
+          ctx.chat.id.toString()
+        );
+        if (hasSubscription) {
+          await sessionDatabase.removeSubscriber(ctx.chat.id.toString());
+          ctx.match =
+            "Hello, i want to stop receiving updates on the show progress!";
+          this.messageManager.handleMessage(ctx);
+        } else {
+          ctx.reply("You never subscribed to the show 😔");
+        }
       });
+
       this.bot.command("message", (ctx) =>
         this.messageManager.handleMessage(ctx)
       );
