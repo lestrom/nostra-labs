@@ -112,7 +112,7 @@ The repository is organized under the `nostra-labs/packages/` directory into sev
    - An **Unstake** button (located near the Wallet Connect button) calls the `unstake()` method, allowing players to withdraw tokens.
    - The UI continuously displays the Available to Unstake Balance.
 
-6. **In-Game Functions**  
+6. **In-Game Functions**  (not implemented yet)
    - **Round Participation:**  
      - Players view active rounds, join rounds with `enterRound()`, and exit rounds with `exitRound()`.
    - **Round Resolution:**  
@@ -153,6 +153,7 @@ The repository is organized under the `nostra-labs/packages/` directory into sev
   - Styled with Tailwind CSS for a retro arcade look.
   - Wallet integration via ethers.js.
   - Deployed as a modern web app with interactive elements.
+  - OnChainKit for wallet connection management
 
 - **Backend & Smart Contracts:**  
   - Smart contracts are written in Solidity.
