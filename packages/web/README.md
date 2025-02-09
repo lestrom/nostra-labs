@@ -1,50 +1,54 @@
-# React + TypeScript + Vite
+## Starting Up the Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+To start up the frontend, follow these steps:
 
-Currently, two official plugins are available:
+1. **Install Dependencies**: Make sure you have `pnpm` installed. If not, you can install it globally using npm:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+   ```bash
+   npm install -g pnpm
+   ```
 
-## Expanding the ESLint configuration
+2. **Navigate to the Project Directory**: Open your terminal and navigate to the `web` package directory:
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+   ```bash
+   cd /Users/legape/workspaces/private/nostra-labs/packages/web
+   ```
 
-- Configure the top-level `parserOptions` property like this:
+3. **Install Project Dependencies**: Run the following command to install all the necessary dependencies:
 
-```js
-export default tseslint.config({
-    languageOptions: {
-        // other options...
-        parserOptions: {
-            project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-            tsconfigRootDir: import.meta.dirname,
-        },
-    },
-});
+   ```bash
+   pnpm install
+   ```
+
+4. **Start the Development Server**: Use the following command to start the Vite development server:
+
+   ```bash
+   pnpm dev
+   ```
+
+5. **Open Your Browser**: Once the development server is running, open your browser and navigate to:
+   ```
+   http://localhost:3000
+   ```
+
+You should now see your React application running with hot module replacement (HMR) enabled.
+
+## Building for Production
+
+To build the project for production, run the following command:
+
+```bash
+pnpm build
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+This will create an optimized production build in the `dist` directory.
 
-```js
-// eslint.config.js
-import react from "eslint-plugin-react";
+## Running ESLint
 
-export default tseslint.config({
-    // Set the react version
-    settings: { react: { version: "18.3" } },
-    plugins: {
-        // Add the react plugin
-        react,
-    },
-    rules: {
-        // other rules...
-        // Enable its recommended rules
-        ...react.configs.recommended.rules,
-        ...react.configs["jsx-runtime"].rules,
-    },
-});
+To run ESLint and check for any linting errors, use the following command:
+
+```bash
+pnpm lint
 ```
+
+This will run ESLint based on the configuration provided in the `eslint.config.js` file.
