@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { WagmiProvider } from 'wagmi';
 import { wagmiConfig } from './config/wagmiConfig';
-import { baseSepolia } from 'wagmi/chains'; // add baseSepolia for testing
+import { base, baseSepolia } from 'wagmi/chains'; // add baseSepolia for testing
+
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -14,10 +15,10 @@ export function Providers({ children }: { children: ReactNode }) {
         chain={baseSepolia} // add baseSepolia for testing
         config={{
           appearance: {
-            name: 'Nostra-Labs', // Displayed in modal header
-            logo: 'https://github.com/aryanpatil2703/nostra-labs-new/blob/main/packages/web/public/Nostra-labs_logo.svg', // Displayed in modal header
-            mode: 'auto', // 'light' | 'dark' | 'auto'
-            theme: 'dark', // 'default' or custom theme
+            name: 'Nostra-Labs',        // Displayed in modal header
+            logo: 'Nostra-labs_logo.svg',// Displayed in modal header
+            mode: 'auto',                 // 'light' | 'dark' | 'auto'
+            theme: 'dark',             // 'default' or custom theme
           },
           wallet: {
             display: 'modal',

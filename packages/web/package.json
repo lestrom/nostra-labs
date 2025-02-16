@@ -76,7 +76,10 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@swc/core",
-      "esbuild"
+      "bufferutil",
+      "esbuild",
+      "keccak",
+      "utf-8-validate"
     ]
   }
 }

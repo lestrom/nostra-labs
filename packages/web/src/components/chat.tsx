@@ -23,6 +23,7 @@ import { IAttachment } from "@/types";
 import { AudioRecorder } from "./audio-recorder";
 import { Badge } from "./ui/badge";
 
+
 interface ExtraContentFields {
     user: string;
     createdAt: number;
@@ -39,6 +40,7 @@ export default function Page({ agentId }: { agentId: UUID }) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    
 
     const queryClient = useQueryClient();
 
@@ -171,7 +173,7 @@ export default function Page({ agentId }: { agentId: UUID }) {
                     {transitions((styles, message) => {
                         const variant = getMessageVariant(message?.user);
                         return (
-                            // @ts-expect-error ...
+                            
                             <animated.div
                                 style={styles}
                                 className="flex flex-col gap-2 p-4"

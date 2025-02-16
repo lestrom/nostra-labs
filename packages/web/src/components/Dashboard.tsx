@@ -1,150 +1,203 @@
-import { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
-import { formatEther } from 'ethers';
-import { Button } from '@/components/ui/button'; // Your UI button component (or use OnchainKit’s if available)
-import {
-  NostraTokenAddress,
-  StakingContractAddress,
-  NostraTokenABI,
-  StakingContractABI,
-} from './address-abi';
-import { WalletComponents } from '@/components/buttons/walletConnect'; // Your wallet connection components
-import AgentRoute from '@/routes/chat';
+import React, { useState, useEffect } from 'react';
+import { ethers, formatEther, getBigInt } from 'ethers';
+import { WalletComponents } from '@/components/buttons/walletConnect';
+import MintComponent from './buttons/mint';       // Use your final mint.tsx component as is.
+import StakeUnstake from './StakeUnstake';         // Use your final stakeunstake.tsx component as is.
+import AgentRoute from '@/routes/chat';            // Chat card component
 import '@coinbase/onchainkit/styles.css';
-import StakeUnstake from './StakeUnstake';
-import { useOnchainKit } from '@coinbase/onchainkit';
-import MintComponent from './buttons/mint';
+import { 
+  NostraTokenAddress, 
+  NostraTokenABI, 
+  StakingContractAddress, 
+  StakingContractABI 
+} from './address-abi';
+import { useQuery } from "@tanstack/react-query";
+import { Cog } from "lucide-react";
+import PageTitle from "@/components/page-title";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { apiClient } from "@/lib/api";
+import { NavLink } from "react-router";
+import { UUID } from "@elizaos/core";
+import { formatAgentName } from "@/lib/utils";
+
 
 export default function Dashboard() {
-  const { address } = useOnchainKit();
-  // Local state for wallet, balances, and loading indicators
+  // State for wallet connection and balances.
   const [userAddress, setUserAddress] = useState<string | null>(null);
-  const [_isConnected, setIsConnected] = useState(false);
-  const [stakedBalance, setStakedBalance] = useState<ethers.BigNumberish>(BigInt(0));
-  const [availableBalance, setAvailableBalance] = useState<ethers.BigNumberish>(BigInt(0));
+  const [isConnected, setIsConnected] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<ethers.BigNumberish>(BigInt(0));
-  const [isMinting, _setIsMinting] = useState(false);
-  const [isStaking, _setIsStaking] = useState(false);
-  const [isUnstaking, _setIsUnstaking] = useState(false);
+  const [stakedBalance, setStakedBalance] = useState<ethers.BigNumberish>(BigInt(0));
+  // Consider the user minted if their token balance > 0.
+  const [minted, setMinted] = useState(false);
 
-  // Initialize ethers provider (assumes MetaMask or similar is installed)
+  // Create an ethers provider (assumes a wallet extension is installed)
   const provider = new ethers.BrowserProvider(window.ethereum);
 
-  // Check if wallet is connected
+  const query = useQuery({
+        queryKey: ["agents"],
+        queryFn: () => apiClient.getAgents(),
+        refetchInterval: 5_000
+    });
+
+    const agents = query?.data?.agents;
+
+  // Check for initial wallet connection.
   useEffect(() => {
     async function checkConnection() {
       if (window.ethereum) {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setUserAddress(accounts[0]);
-          setIsConnected(true);
-        } else {
-          setIsConnected(false);
-          setUserAddress(null);
+        try {
+          const accounts: string[] = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            setUserAddress(accounts[0]);
+            setIsConnected(true);
+          } else {
+            setUserAddress(null);
+            setIsConnected(false);
+          }
+        } catch (error) {
+          console.error("Error checking wallet connection:", error);
         }
       }
     }
     checkConnection();
-  }, [address]);
+  }, []);
 
-  // Fetch balances from both contracts
+  // Listen for account changes so the Dashboard updates immediately.
+  useEffect(() => {
+    if (!window.ethereum || !window.ethereum.on) return;
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts.length > 0) {
+        setUserAddress(accounts[0]);
+        setIsConnected(true);
+      } else {
+        setUserAddress(null);
+        setIsConnected(false);
+      }
+    };
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    return () => {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+    };
+  }, []);
+
+  // Fetch balances from the token contract and staking contract.
   async function fetchBalances() {
     if (!userAddress) return;
     try {
       const signer = await provider.getSigner();
 
-      // Get NostraToken balance (minted tokens)
-      const nostraTokenContract = new ethers.Contract(NostraTokenAddress, NostraTokenABI, signer);
-      const tokenBal: ethers.BigNumberish = await nostraTokenContract.balanceOf(userAddress);
-      setTokenBalance(tokenBal);
+      // Get token balance.
+      const tokenContract = new ethers.Contract(NostraTokenAddress, NostraTokenABI, signer);
+      const balance = await tokenContract.balanceOf(userAddress);
+      setTokenBalance(balance);
+      setMinted(getBigInt(balance) > BigInt(0));
 
-      // Get staking balances (assumes the StakingContract's players mapping returns an object like: { availableStakes, unavailableStakes })
-      const stakingContract = new ethers.Contract(
-        StakingContractAddress,
-        StakingContractABI,
-        signer,
-      );
+      // Get staked balance (assumed stored in players[user].unavailableStakes).
+      const stakingContract = new ethers.Contract(StakingContractAddress, StakingContractABI, signer);
       const playerData = await stakingContract.players(userAddress);
-      setAvailableBalance(playerData.availableStakes);
       setStakedBalance(playerData.unavailableStakes);
     } catch (error) {
-      console.error('Error fetching balances:', error);
+      console.error("Error fetching balances:", error);
     }
   }
 
-  // Re-fetch balances after actions (mint, stake, unstake)
+  // Poll for balances every 5 seconds.
+  useEffect(() => {
+    if (!userAddress) return;
+    const interval = setInterval(() => {
+      fetchBalances();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [userAddress]);
+
+  // Update balances when userAddress or minted state changes.
   useEffect(() => {
     if (userAddress) {
       fetchBalances();
     }
-  }, [userAddress, isMinting, isStaking, isUnstaking]);
+  }, [userAddress, minted]);
 
-  // --- Minting: Interact with NostraToken.sol ---
-
-  // --- Staking: Interact with the StakingContract ---
-
-  // Determine which UI to show based on staked balance:
-  // If stakedBalance > 0, show the Mrs. Beauty Chat Card; otherwise, show Mint & Stake buttons.
-  const showChatCard = ethers.getBigInt(stakedBalance) > BigInt(0);
+  // Determine which UI to show based on staked balance.
+  const showChatCard = getBigInt(stakedBalance) > BigInt(0);
 
   return (
-    <div>
-      {/* Only render wallet-dependent UI when wallet is connected */}
+    <div className="min-h-screen p-4 relative">
+      {/* Always display WalletComponents in the top-right */}
+      <div className="fixed top-8 right-6">
+        <WalletComponents />
+      </div>
 
-      <>
-        {/* --- Top Bar: Wallet Connection Button --- */}
-        <div className="items-center justify-center gap-4">
-          <div className="fixed right-6 top-8 z-0 p-0 text-right">
-            <WalletComponents />
-          </div>
-        </div>
-
-        {/* --- Always-Visible Information --- */}
-        <div className="absolute right-10 top-48 rounded border border-l-4 border-gray-300 bg-black p-4 text-center text-right shadow-lg">
-          <div className="">
-            <p>Token Balance: {formatEther(tokenBalance)} NST</p>
-            <p>Available to Unstake: {formatEther(availableBalance)} NST</p>
-          </div>
-        </div>
-
-        {/* --- Main Content: Either Mint/Stake or Chat Card --- */}
-        <div className="flex h-screen flex-col items-center justify-center gap-8">
-          {!showChatCard ? (
-            <>
-              <div>
-                <MintComponent />
-              </div>
-
-              <StakeUnstake />
-            </>
-          ) : (
-            <div className="w-full max-w-lg rounded-lg border bg-white p-8 shadow-xl">
-              {/* Mrs. Beauty Chat Card */}
-              <h2 className="mb-4 text-center text-2xl font-bold">MrsBeauty Chat</h2>
+      {/* Main Content */}
+      <div className="mt-24 flex flex-col items-center gap-8">
+        {isConnected ? (
+          showChatCard ? (
+            // If staked balance > 0, show the chat card.
+            <div className="w-full max-w-lg border p-8 rounded-lg shadow-xl bg-white">
+              <h2 className="text-2xl font-bold mb-4 text-center">MrsBeauty Chat</h2>
               <p className="mb-4 text-center text-xl">
                 Your Staked Balance: {formatEther(stakedBalance)} NST
               </p>
-              {/* Render the chat interface */}
-              <AgentRoute />
-              <div className="mt-4 border-t pt-4">
-                <input
-                  type="text"
-                  placeholder="Type your message..."
-                  className="w-full rounded-lg border p-3 text-xl"
-                />
-                <Button className="mt-4 h-14 w-full rounded-lg bg-purple-500 text-xl text-white hover:bg-purple-600">
-                  Send
-                </Button>
-              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {agents?.map((agent: { id: UUID; name: string }) => (
+                    <Card key={agent.id}>
+                        <CardHeader>
+                            <CardTitle>{agent?.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="rounded-md bg-muted aspect-square w-full grid place-items-center">
+                                <div className="text-6xl font-bold uppercase">
+                                    {formatAgentName(agent?.name)}
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <div className="flex items-center gap-4 w-full">
+                                <NavLink
+                                    to={`/chat/${agent.id}`}
+                                    className="w-full grow"
+                                >
+                                    <Button
+                                        variant="outline"
+                                        className="w-full grow"
+                                    >
+                                        Chat
+                                    </Button>
+                                </NavLink>
+                                <NavLink
+                                    to={`/settings/${agent.id}`}
+                                    key={agent.id}
+                                >
+                                    <Button size="icon" variant="outline">
+                                        <Cog />
+                                    </Button>
+                                </NavLink>
+                            </div>
+                        </CardFooter>
+                    </Card>
+                ))}
             </div>
-          )}
-        </div>
-
-        {/* --- Bottom-Left: Connected Wallet Indicator --- */}
-        {/* <div className="fixed bottom-4 left-4 bg-gray-200 p-3 rounded shadow text-lg">
-            Connected: {userAddress}
-          </div> */}
-      </>
+            </div>
+          ) : (
+            // If staked balance is zero, show Mint and StakeUnstake components.
+            <>
+              {!minted ? (
+                <MintComponent />
+              ) : (
+                <StakeUnstake />
+              )}
+            </>
+          )
+        ) : (
+          <p className="text-lg">Please connect your wallet.</p>
+        )}
+      </div>
     </div>
   );
 }
